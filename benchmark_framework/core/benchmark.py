@@ -160,9 +160,11 @@ class VideoBenchmark:
             with open(frame_path, 'rb') as f:
                 frames_bytes.append(f.read())
 
-        # Load audio as bytes
-        with open(clip.audio, 'rb') as f:
-            audio_bytes = f.read()
+        # Load audio as bytes (if available)
+        audio_bytes = b""
+        if clip.audio is not None:
+            with open(clip.audio, 'rb') as f:
+                audio_bytes = f.read()
 
         metrics.preprocessing_time = time.time() - preprocess_start
 
