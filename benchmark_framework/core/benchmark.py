@@ -34,6 +34,10 @@ class VideoBenchmark:
         self.config = config
         self.video_config = video_config
 
+        # Store modality flags for convenience
+        self.enable_audio = config.enable_audio
+        self.enable_video = config.enable_video
+
         # Initialize components
         self.api_client = QwenOmniClient(
             api_url=config.api_url,
@@ -74,7 +78,9 @@ class VideoBenchmark:
         clips = self.extractor.extract_clips(
             video_path,
             audio_sample_rate=self.video_config.audio_sample_rate,
-            audio_channels=self.video_config.audio_channels
+            audio_channels=self.video_config.audio_channels,
+            enable_audio=self.enable_audio,
+            enable_video=self.enable_video
         )
         print(f"Extracted {len(clips)} clips")
 
@@ -111,7 +117,9 @@ class VideoBenchmark:
             api_url=self.config.api_url,
             model_name=self.config.model_name,
             audio_sample_rate=self.video_config.audio_sample_rate,
-            audio_channels=self.video_config.audio_channels
+            audio_channels=self.video_config.audio_channels,
+            enable_audio=self.config.enable_audio,
+            enable_video=self.config.enable_video
         )
 
         result = BenchmarkResult(
@@ -161,11 +169,13 @@ class VideoBenchmark:
         # Run inference
         try:
             result: InferenceResult = self.api_client.infer_sync(
-                frames=frames_bytes,
-                audio=audio_bytes,
+                frames=frames_bytes if self.enable_video else [],
+                audio=audio_bytes if self.enable_audio else b"",
                 prompt=prompt,
                 max_tokens=self.config.max_tokens,
-                temperature=self.config.temperature
+                temperature=self.config.temperature,
+                enable_audio=self.enable_audio,
+                enable_video=self.enable_video
             )
 
             # Update metrics from API result

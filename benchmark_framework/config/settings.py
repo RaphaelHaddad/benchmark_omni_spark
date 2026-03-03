@@ -12,6 +12,10 @@ class BenchmarkConfig(BaseModel):
     clip_duration: int = Field(default=5, description="Clip duration in seconds")
     frames_per_clip: int = Field(default=5, description="Number of frames per clip")
 
+    # Modality selection
+    enable_audio: bool = Field(default=True, description="Enable audio modality")
+    enable_video: bool = Field(default=True, description="Enable video modality")
+
     # API settings
     api_url: str = Field(default="http://localhost:8078/v1", description="API base URL")
     api_key: str = Field(default="qwen3-omni-api-key", description="API authentication key")
@@ -33,7 +37,13 @@ class BenchmarkConfig(BaseModel):
 
     @field_validator("clip_duration", "frames_per_clip")
     @classmethod
-    def validate_positive(cls, v: int) -> int:
+    def validate_positive(cls, v: int, info) -> int:
+        # For frames_per_clip, allow 0 when video is disabled
+        if info.field_name == "frames_per_clip":
+            if v < 0:
+                raise ValueError("Must be non-negative")
+            return v
+        # For clip_duration, must be positive
         if v <= 0:
             raise ValueError("Must be positive")
         return v
@@ -43,6 +53,21 @@ class BenchmarkConfig(BaseModel):
     def validate_temperature(cls, v: float) -> float:
         if not 0 <= v <= 2:
             raise ValueError("Temperature must be between 0 and 2")
+        return v
+
+    @field_validator("enable_audio", "enable_video")
+    @classmethod
+    def validate_modality(cls, v: bool, info) -> bool:
+        """Ensure at least one modality is enabled."""
+        # Get all values for validation
+        if hasattr(info, "data"):
+            data = info.data
+            audio = data.get("enable_audio", True)
+            video = data.get("enable_video", True)
+            # Only validate if both fields are set
+            if "enable_audio" in data and "enable_video" in data:
+                if not audio and not video:
+                    raise ValueError("At least one modality (audio or video) must be enabled")
         return v
 
 

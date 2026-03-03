@@ -53,23 +53,27 @@ class QwenOmniClient:
         audio: bytes,
         prompt: str,
         max_tokens: int = 512,
-        temperature: float = 0.7
+        temperature: float = 0.7,
+        enable_audio: bool = True,
+        enable_video: bool = True
     ) -> dict:
         """Build API request payload."""
         content = []
 
-        # Add images
-        for frame_bytes in frames:
-            content.append({
-                "type": "image_url",
-                "image_url": {"url": self._encode_image(frame_bytes)}
-            })
+        # Add images if video enabled
+        if enable_video:
+            for frame_bytes in frames:
+                content.append({
+                    "type": "image_url",
+                    "image_url": {"url": self._encode_image(frame_bytes)}
+                })
 
-        # Add audio
-        content.append({
-            "type": "audio_url",
-            "audio_url": {"url": self._encode_audio(audio)}
-        })
+        # Add audio if audio enabled
+        if enable_audio:
+            content.append({
+                "type": "audio_url",
+                "audio_url": {"url": self._encode_audio(audio)}
+            })
 
         # Add text prompt
         content.append({
@@ -91,7 +95,9 @@ class QwenOmniClient:
         audio: bytes,
         prompt: str,
         max_tokens: int = 512,
-        temperature: float = 0.7
+        temperature: float = 0.7,
+        enable_audio: bool = True,
+        enable_video: bool = True
     ) -> InferenceResult:
         """
         Run inference with streaming to collect accurate metrics.
@@ -102,11 +108,13 @@ class QwenOmniClient:
             prompt: Text prompt
             max_tokens: Maximum tokens to generate
             temperature: Sampling temperature
+            enable_audio: Enable audio modality
+            enable_video: Enable video modality
 
         Returns:
             InferenceResult with text and metrics
         """
-        request_payload = self._build_request(frames, audio, prompt, max_tokens, temperature)
+        request_payload = self._build_request(frames, audio, prompt, max_tokens, temperature, enable_audio, enable_video)
 
         request_sent = time.time()
         first_token_time: Optional[float] = None
@@ -203,7 +211,9 @@ class QwenOmniClient:
         audio: bytes,
         prompt: str,
         max_tokens: int = 512,
-        temperature: float = 0.7
+        temperature: float = 0.7,
+        enable_audio: bool = True,
+        enable_video: bool = True
     ) -> InferenceResult:
         """
         Synchronous wrapper for infer.
@@ -214,8 +224,10 @@ class QwenOmniClient:
             prompt: Text prompt
             max_tokens: Maximum tokens to generate
             temperature: Sampling temperature
+            enable_audio: Enable audio modality
+            enable_video: Enable video modality
 
         Returns:
             InferenceResult with text and metrics
         """
-        return asyncio.run(self.infer(frames, audio, prompt, max_tokens, temperature))
+        return asyncio.run(self.infer(frames, audio, prompt, max_tokens, temperature, enable_audio, enable_video))

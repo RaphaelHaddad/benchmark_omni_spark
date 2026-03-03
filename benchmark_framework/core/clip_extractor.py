@@ -17,6 +17,8 @@ class VideoClip:
     duration: float = 0.0
     frames: List[Path] = field(default_factory=list)
     audio: Path = field(default=None)
+    enable_audio: bool = True
+    enable_video: bool = True
 
     def to_dict(self) -> dict:
         """Convert clip to dictionary."""
@@ -26,7 +28,9 @@ class VideoClip:
             "end_time": self.end_time,
             "duration": self.duration,
             "frame_count": len(self.frames),
-            "audio_path": str(self.audio) if self.audio else None
+            "audio_path": str(self.audio) if self.audio else None,
+            "enable_audio": self.enable_audio,
+            "enable_video": self.enable_video
         }
 
 
@@ -58,7 +62,9 @@ class ClipExtractor:
         self,
         video_path: Path,
         audio_sample_rate: int = 16000,
-        audio_channels: int = 1
+        audio_channels: int = 1,
+        enable_audio: bool = True,
+        enable_video: bool = True
     ) -> List[VideoClip]:
         """
         Extract all clips from video using sliding window.
@@ -67,10 +73,16 @@ class ClipExtractor:
             video_path: Path to video file
             audio_sample_rate: Audio sample rate in Hz
             audio_channels: Number of audio channels
+            enable_audio: Enable audio extraction
+            enable_video: Enable video (frames) extraction
 
         Returns:
             List of VideoClip objects
         """
+        # Validate at least one modality is enabled
+        if not enable_audio and not enable_video:
+            raise ValueError("At least one modality (audio or video) must be enabled")
+
         # Get video info
         video_info = self.processor.get_video_info(video_path)
         duration = video_info.duration
@@ -90,22 +102,37 @@ class ClipExtractor:
             if actual_duration < 1.0:
                 break
 
-            # Extract clip with frames and audio
-            frames, audio = self.processor.extract_clip_with_audio(
-                video_path=video_path,
-                start_time=start_time,
-                duration=actual_duration,
-                num_frames=self.frames_per_clip,
-                sample_rate=audio_sample_rate,
-                channels=audio_channels
-            )
+            # Extract clip with frames and/or audio based on modality flags
+            frames = []
+            audio = None
+
+            # First extract the clip (needed for both frame and audio extraction)
+            clip_path = self.processor.extract_clip(video_path, start_time, actual_duration)
+
+            # Extract frames if video enabled
+            if enable_video:
+                num_frames = self.frames_per_clip if self.frames_per_clip > 0 else 1
+                frames = self.processor.extract_frames(clip_path, num_frames)
+
+            # Extract audio if audio enabled
+            if enable_audio:
+                audio = self.processor.extract_audio(
+                    clip_path,
+                    sample_rate=audio_sample_rate,
+                    channels=audio_channels
+                )
+
+            # Clean up temporary clip
+            clip_path.unlink(missing_ok=True)
 
             clip = VideoClip(
                 start_time=start_time,
                 end_time=end_time,
                 duration=actual_duration,
                 frames=frames,
-                audio=audio
+                audio=audio,
+                enable_audio=enable_audio,
+                enable_video=enable_video
             )
             clips.append(clip)
 

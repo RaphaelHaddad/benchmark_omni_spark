@@ -45,6 +45,8 @@ class BenchmarkConfig:
     model_name: str
     audio_sample_rate: int
     audio_channels: int
+    enable_audio: bool = True
+    enable_video: bool = True
 
     def to_dict(self) -> dict:
         """Convert to dictionary."""
@@ -56,7 +58,9 @@ class BenchmarkConfig:
             "api_url": self.api_url,
             "model_name": self.model_name,
             "audio_sample_rate": self.audio_sample_rate,
-            "audio_channels": self.audio_channels
+            "audio_channels": self.audio_channels,
+            "enable_audio": self.enable_audio,
+            "enable_video": self.enable_video
         }
 
 
