@@ -1,0 +1,45 @@
+# Default configuration for Qwen3-Omni benchmark framework
+
+# Benchmark hyperparameters
+benchmark:
+  clip_duration: 5              # Clip duration in seconds
+  frames_per_clip: 5            # Number of frames per clip
+  sliding_window_overlap: 0      # Seconds between clip starts (0 = no overlap)
+  max_tokens: 512               # Maximum tokens to generate
+  temperature: 0.7              # Sampling temperature
+  num_runs: 1                   # Number of benchmark runs for statistics
+
+# API configuration
+api:
+  url: "http://localhost:8078/v1"
+  key: "qwen3-omni-api-key"
+  model: "qwen3-omni"
+
+# Video processing settings
+video:
+  frame_format: "png"
+  audio_format: "wav"
+  audio_sample_rate: 16000       # Hz
+  audio_channels: 1              # 1 = mono, 2 = stereo
+
+# Metrics to collect
+metrics:
+  enabled:
+    - time_to_first_token
+    - time_to_last_token
+    - tokens_per_second
+    - total_tokens
+    - preprocessing_time
+  percentiles:
+    - 0.5   # Median
+    - 0.9   # P90
+    - 0.95  # P95
+    - 0.99  # P99
+
+# Results storage
+storage:
+  output_dir: "./results"
+  format: "json"                # json, csv, or both
+  save_raw_responses: true
+  save_clips: false
+  compress_old_results: false

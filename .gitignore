@@ -1,0 +1,9 @@
+.claude
+venv
+benchmark_framework/core/__pycache__
+benchmark_framework/preprocessing/__pycache__
+__pycache__/
+videos/test.mp4
+results/processed
+results/raw
+results/reports
